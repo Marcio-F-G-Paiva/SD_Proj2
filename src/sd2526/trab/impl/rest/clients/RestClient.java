@@ -1,17 +1,7 @@
 package sd2526.trab.impl.rest.clients;
 
-import static sd2526.trab.api.java.Result.error;
-import static sd2526.trab.api.java.Result.ok;
-import static sd2526.trab.api.java.Result.ErrorCode.INTERNAL_ERROR;
-import static sd2526.trab.api.java.Result.ErrorCode.TIMEOUT;
-
-import java.io.FileInputStream;
-import java.security.KeyStore;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
@@ -25,6 +15,10 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import sd2526.trab.api.java.Result;
 import sd2526.trab.api.java.Result.ErrorCode;
+import static sd2526.trab.api.java.Result.ErrorCode.INTERNAL_ERROR;
+import static sd2526.trab.api.java.Result.ErrorCode.TIMEOUT;
+import static sd2526.trab.api.java.Result.error;
+import static sd2526.trab.api.java.Result.ok;
 import sd2526.trab.impl.utils.Sleep;
 
 public class RestClient {
@@ -50,28 +44,8 @@ public class RestClient {
         config.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT);
         config.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
 
-        var sslContext = createSSLContext();
-        this.client = ClientBuilder.newBuilder().sslContext(sslContext).withConfig(config).build();
+        this.client = ClientBuilder.newClient(config);
         this.target = client.target(serverURI).path(servicePath);
-    }
-
-    private SSLContext createSSLContext() {
-        try {
-            var trustStore = KeyStore.getInstance("JKS");
-            try (var fis = new FileInputStream("truststore.ks")) {
-                trustStore.load(fis, "changeit".toCharArray());
-            }
-
-            var trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init(trustStore);
-
-            var sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
-
-            return sslContext;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create SSL context", e);
-        }
     }
 
     protected <T> Result<T> reTry(Supplier<Result<T>> func) {

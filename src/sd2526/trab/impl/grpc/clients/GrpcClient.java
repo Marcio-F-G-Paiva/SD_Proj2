@@ -1,35 +1,62 @@
 package sd2526.trab.impl.grpc.clients;
 
+import java.io.FileInputStream;
 import java.net.URI;
+import java.security.KeyStore;
 import java.util.function.Supplier;
 
-import io.grpc.Channel;
-import io.grpc.ManagedChannelBuilder;
+import javax.net.ssl.TrustManagerFactory;
+
+import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.NettyChannelBuilder;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import sd2526.trab.api.java.Result;
 import sd2526.trab.api.java.Result.ErrorCode;
-
 public class GrpcClient {
 
     final protected URI serverURI;
-    final protected Channel channel;
+    final protected ManagedChannel channel;
 
     protected GrpcClient(String serverUrl) {
         this.serverURI = URI.create(serverUrl);
-        this.channel = ManagedChannelBuilder.forAddress(serverURI.getHost(), serverURI.getPort())
-                .enableRetry().build();
+        String trustStoreFilename = System.getProperty("javax.net.ssl.trustStore");
+        String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
+
+        try {
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        try (FileInputStream input = new FileInputStream(trustStoreFilename)) {
+        trustStore.load(input, trustStorePassword.toCharArray());
+        }
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+        TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(trustStore);
+        SslContext sslContext = GrpcSslContexts.configure(
+            SslContextBuilder.forClient().trustManager(trustManagerFactory)
+        ).build();
+        
+        this.channel = NettyChannelBuilder
+        .forAddress(serverURI.getHost(), serverURI.getPort())
+        .sslContext(sslContext)
+        .enableRetry()
+        .build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create gRPC client: " + e.getMessage(), e);
+        }
     }
 
     protected <T> Result<T> toJavaResult(Supplier<T> func) {
         try {
-            return ok(func.get());
+            return Result.ok(func.get());
         } catch (StatusRuntimeException sre) {
             //sre.printStackTrace();
-            return error(statusToErrorCode(sre.getStatus()));
+            return Result.error(statusToErrorCode(sre.getStatus()));
         } catch (Exception x) {
             x.printStackTrace();
-            return Result.error(INTERNAL_ERROR);
+            return Result.error(ErrorCode.INTERNAL_ERROR);
         }
     }
 

@@ -23,3 +23,13 @@ GATEWAY_REST_EXTRA_ARGS=
 
 DISCOVERY_MULTICAST_IP=226.226.226.226
 DISCOVERY_MULTICAST_PORT=2266
+
+MESSAGES_REP_SERVER_MAINCLASS=
+MESSAGES_REP_PORT=
+MESSAGES_REP_EXTRA_ARGS_FIRST=
+MESSAGES_REP_EXTRA_ARGS_OTHER=
+
+USERS_KEYSTORES=keystores for the users server (e.g. users.ourorg0,users.jks,users0pwd)
+SERVERS_KEYSTORES=keystores for the messages servers - 1 per server in two replicated domains and one non-replicated domain (e.g. messages0.ourorg0,messages0-0.jks,messages0-0pwd messages1.ourorg0,messages1-0.jks,messages1-0pwd messages2.ourorg0,messages2-0.jks,messages2-0pwd messages0.ourorg1,messages0-1.jks,messages0-1pwd messages1.ourorg1,messages1-1.jks,messages1-1pwd  messages2.ourorg1,messages2-1.jks,messages2-1pwd messages0.ourorg2,messages0-2.jks,messages0-2pwd)
+CLIENT_TRUSTSTORE=name of the file with the truststore for the clients (e.g. client-truststore.jks)
+CLIENT_TRUSTSTORE_PWD=truststore password
