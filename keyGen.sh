@@ -25,7 +25,11 @@ echo "Generating certificates for ${#DOMAINS[@]} domains..."
 for DOMAIN in "${DOMAINS[@]}"; do
     echo "-------------------------------------------------------"
     echo "Processing: $DOMAIN"
-
+    if [[ $DOMAIN == messages* ]]; then
+        echo "This is a messages server"
+        i = 0 
+        for i < 3
+    fi
     # 1. Generate KeyPair and Keystore
     # We include 'dns:localhost' in SAN so you can also test locally
     keytool -genkeypair \

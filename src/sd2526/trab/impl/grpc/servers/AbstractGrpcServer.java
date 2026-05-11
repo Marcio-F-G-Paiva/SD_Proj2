@@ -29,32 +29,38 @@ public abstract class AbstractGrpcServer extends AbstractServer {
 
     protected final Server server;
 
-    protected AbstractGrpcServer(Logger log, String service, int port) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException, SSLException {
-        super(log, service, String.format(SERVER_BASE_URI, IP.hostAddress(), port, GRPC_CTX));
+    protected AbstractGrpcServer(Logger log, String service, int port) {
+        super(log, service, String.format(SERVER_BASE_URI, IP.hostname(), port, GRPC_CTX));
 
         String keyStoreFilename = System.getProperty("javax.net.ssl.keyStore");
         String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
-        KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-        try(FileInputStream input = new FileInputStream(keyStoreFilename)) {
-            keystore.load(input, keyStorePassword.toCharArray());
-        } catch (IOException ex) {
-            System.getLogger(AbstractGrpcServer.class.getName()).log(System.Logger.Level.ERROR, "Failed to load key store", ex);
-        } catch (Exception ex) {
-            System.getLogger(AbstractGrpcServer.class.getName()).log(System.Logger.Level.ERROR, "Failed to initialize key store", ex);
-        }
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
-        KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(keystore, keyStorePassword.toCharArray());
-        SslContext context = GrpcSslContexts.configure(
-        SslContextBuilder.forServer(keyManagerFactory)
-        ).build();
-        
-        var builder = NettyServerBuilder.forPort(port).sslContext(context);
-        for (var s : controllers(super.serverURI)) {
-            builder.addService(s);
+        try {
+            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+            try (FileInputStream input = new FileInputStream(keyStoreFilename)) {
+                keystore.load(input, keyStorePassword.toCharArray());
+            } catch (IOException ex) {
+                System.getLogger(AbstractGrpcServer.class.getName()).log(System.Logger.Level.ERROR, "Failed to load key store", ex);
+            } catch (Exception ex) {
+                System.getLogger(AbstractGrpcServer.class.getName()).log(System.Logger.Level.ERROR, "Failed to initialize key store", ex);
+            }
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keystore, keyStorePassword.toCharArray());
+            SslContext context = GrpcSslContexts.configure(
+                    SslContextBuilder.forServer(keyManagerFactory)
+            ).build();
+
+            var builder = NettyServerBuilder.forPort(port).sslContext(context);
+            for (var s : controllers(super.serverURI)) {
+                builder.addService(s);
+            }
+
+            this.server = builder.build();
+
+        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | SSLException e) {
+            throw new RuntimeException("Failed to create SSL context: " + e.getMessage(), e);
         }
 
-        this.server = builder.build();
     }
 
     protected abstract List<GrpcController> controllers(String uri);
