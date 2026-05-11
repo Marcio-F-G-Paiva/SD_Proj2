@@ -1,6 +1,7 @@
 package sd2526.trab.impl.rest.servers;
 
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
@@ -13,7 +14,7 @@ import sd2526.trab.impl.utils.IP;
 
 
 public abstract class AbstractRestServer extends AbstractServer {
-	private static final String SERVER_BASE_URI = "http://%s:%s%s";
+	private static final String SERVER_BASE_URI = "https://%s:%s%s";
 	private static final String REST_CTX = "/rest";
 
 	protected AbstractRestServer(Logger log, String service, int port) {
@@ -26,7 +27,11 @@ public abstract class AbstractRestServer extends AbstractServer {
 		
 		registerResources( config );
 		
-		JdkHttpServerFactory.createHttpServer( URI.create(serverURI.replace(IP.hostAddress(), INETADDR_ANY)), config);
+		try {
+			JdkHttpServerFactory.createHttpServer( URI.create(serverURI.replace(IP.hostAddress(), INETADDR_ANY)), config, javax.net.ssl.SSLContext.getDefault() );
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
 		
 		if( service != null )
 			Discovery.getInstance().announce(serviceName(), super.serverURI);
