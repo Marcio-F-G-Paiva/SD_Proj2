@@ -1,3 +1,0 @@
-keytool -ext SAN=dns:users.domain -genkeypair -alias users.domain -keyalg RSA -validity 365 -keystore users-domain-server.ks -storetype pkcs12
-keytool -exportcert -alias users.domain -keystore users-domain-server.ks -file users-domain.cert
-keytool -importcert -file users-domain.cert -alias users.domain -keystore truststore.ks
