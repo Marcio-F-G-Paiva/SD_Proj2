@@ -96,7 +96,7 @@
 				<configuration>
 					<images>
 						<image>
-							<name>smduarte/${project.artifactId}-${authors}</name>
+							<name>${project.artifactId}-${authors}</name>
 							<build>
 								<dockerFile>${project.basedir}/Dockerfile</dockerFile>
 							</build>

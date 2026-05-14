@@ -30,6 +30,6 @@ MESSAGES_REP_EXTRA_ARGS_FIRST=
 MESSAGES_REP_EXTRA_ARGS_OTHER=
 
 USERS_KEYSTORES=users.ourorg0,users.ourorg0-server.ks,banana users.ourorg1,users.ourorg1-server.ks,banana users.ourorg2,users.ourorg2-server.ks,banana 
-SERVERS_KEYSTORES=messages0.ourorg0,messages0-0.ks,banana messages1.ourorg0,messages1-0.ks,banana messages2.ourorg0,messages2-0.ks,banana messages0.ourorg1,messages0-1.ks,banana messages1.ourorg1,messages1-1.ks,banana messages2.ourorg1,messages2-1.ks,banana messages0.ourorg2,messages0-2.ks,banana
+SERVERS_KEYSTORES=messages0.ourorg0,messages0.ourorg0-server.ks,banana messages1.ourorg0,messages1.ourorg0-server.ks,banana messages2.ourorg0,messages2.ourorg0-server.ks,banana messages0.ourorg1,messages0.ourorg1-server.ks,banana messages1.ourorg1,messages1.ourorg1-server.ks,banana messages2.ourorg1,messages2.ourorg1-server.ks,banana messages0.ourorg2,messages0.ourorg2-server.ks,banana
 CLIENT_TRUSTSTORE=truststore.ks
 CLIENT_TRUSTSTORE_PWD=banana
