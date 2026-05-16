@@ -3,6 +3,7 @@ package sd2526.trab.impl.rest.servers;
 import java.util.List;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.Path;
 import sd2526.trab.api.Message;
 import sd2526.trab.api.java.Messages;
 import sd2526.trab.api.rest.RestMessages;
@@ -11,10 +12,11 @@ import sd2526.trab.impl.api.rest.RestAdminMessages;
 import sd2526.trab.impl.java.clients.Clients;
 import sd2526.trab.impl.java.servers.JavaMessages;
 
+@Path(RestMessages.PATH)
 @Singleton
 public class RestMessagesResource extends RestResource implements RestMessages, RestAdminMessages {
 	
-	static boolean isGateway = false;
+	boolean isGateway = false;
 	
 	Messages impl;	
 
@@ -24,7 +26,9 @@ public class RestMessagesResource extends RestResource implements RestMessages, 
 		return impl;
 	}
 	
-	public RestMessagesResource() {}
+	public RestMessagesResource() {
+		
+	}
 	
 	RestMessagesResource(boolean gw) {	
 		isGateway = gw;

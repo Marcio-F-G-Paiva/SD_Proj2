@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.Path;
 import sd2526.trab.api.User;
 import sd2526.trab.api.java.Users;
 import sd2526.trab.api.rest.RestUsers;
@@ -12,10 +13,11 @@ import sd2526.trab.impl.api.rest.RestAdminUsers;
 import sd2526.trab.impl.java.clients.Clients;
 import sd2526.trab.impl.java.servers.JavaUsers;
 
+@Path(RestUsers.PATH)
 @Singleton
 public class RestUsersResource extends RestResource implements RestUsers, RestAdminUsers {
 
-	static boolean isGateway = false;
+	boolean isGateway = false;
 	
 	Users impl;	
 
