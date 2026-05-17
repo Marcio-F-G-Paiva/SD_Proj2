@@ -18,7 +18,6 @@ public class Clients {
 
 	public static final ClientFactory<Messages> MessagesClient = new ClientFactory<>(Messages.SERVICE_NAME, RestMessagesClient::new, GrpcMessagesClient::new);
 
-
 	public static final ClientFactory<AdminUsers> AdminUsersClient = new ClientFactory<>(Users.SERVICE_NAME, RestAdminUsersClient::new, GrpcAdminUsersClient::new);
 
 	public static final ClientFactory<AdminMessages> AdminMessagesClient = new ClientFactory<>(Messages.SERVICE_NAME, RestAdminMessagesClient::new, GrpcAdminMessagesClient::new);

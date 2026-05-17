@@ -26,9 +26,7 @@ public class RestMessagesResource extends RestResource implements RestMessages, 
 		return impl;
 	}
 	
-	public RestMessagesResource() {
-		
-	}
+	public RestMessagesResource() {}
 	
 	RestMessagesResource(boolean gw) {	
 		isGateway = gw;
