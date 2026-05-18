@@ -2,8 +2,11 @@ package sd2526.trab.impl.external;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import com.github.scribejava.core.model.OAuthRequest;
@@ -36,15 +39,17 @@ public class Zoho implements Messages {
     private static final String ACCOUNTS = "/accounts";
     private static final String FOLDERS = "/folders";
     private static final String MESSAGES = "/messages";
+
     private static final int MESSAGE_LIMIT = 200; 
 
-    static final String CLIENT_ID = "1000.RO7AAP0IS3YUWKQT397EMOULH1CEWH";
-    static final String CLIENT_SECRET = "8ba863010e3539e84efc012588d1ee25919374bc4f";
-    static final String REFRESH_TOKEN = "1000.33d89cf6095dfd97d9120d37e4394770.8d9b80c42f812ab534bfbee41dd0cc23";
+    static final String CLIENT_ID = System.getenv("CLIENT_ID");
+    static final String CLIENT_SECRET = System.getenv("CLIENT_SECRET");
+    static final String REFRESH_TOKEN = System.getenv("REFRESH_TOKEN");
 
     static {
         System.out.println("[ZOHO-STATIC] Validating environment credentials...");
-        if (CLIENT_ID == null || CLIENT_SECRET == null || REFRESH_TOKEN == null) {
+        // Ensure strings aren't blank
+        if (CLIENT_ID.isBlank() || CLIENT_SECRET.isBlank() || REFRESH_TOKEN.isBlank()) {
             throw new IllegalStateException("CRITICAL ERROR: Environment variables missing!");
         }
     }
@@ -56,6 +61,9 @@ public class Zoho implements Messages {
     final ZohoTokenManager tokenManager;
 
     static Zoho instance;
+
+    final Map<String, String> localIdToZohoId = new HashMap<>();
+    final AtomicLong counter = new AtomicLong(0L);
 
     private Zoho() {
         System.out.println("[ZOHO-INIT] Constructing Zoho instance...");
@@ -100,19 +108,35 @@ public class Zoho implements Messages {
     public String getAccessToken() throws Exception {
         return tokenManager.getValidAccessToken();
     }
+    // Helper to format a sequence number/index to the required "domain+xxxx" format
+    private String formatToLocalId(int index) {
+        // String.format("%04d", index) ensures 4-digit padding like "0001"
+        return THIS_DOMAIN + "+" + String.format("%04d", index);
+    }
+    private String nextId(){
+        return "%s+%04d".formatted(THIS_DOMAIN, counter.incrementAndGet());
+    }
 
     class ZohoMessageMapper {
         static List<ZohoMessage> toZohoPayload(Message message) {
             List<ZohoMessage> list = new ArrayList<>();
             for (String dest : message.getDestination()) {
-                list.add(new ZohoMessage(message.getSender(), dest, message.getSubject(), message.getContents()));
+                list.add(new ZohoMessage(message.getId(),message.getSender(), dest, message.getSubject(), message.getContents()));
             }
             return list;
         }
 
         static Message toMessage(ZohoMessage zohoMessage) {
-            return new Message(zohoMessage.fromAddress(), Set.of(zohoMessage.toAddress()), zohoMessage.subject(), zohoMessage.content());
-        }
+        Message msg = new Message(
+            zohoMessage.fromAddress(), 
+            Set.of(zohoMessage.toAddress()), 
+            zohoMessage.subject(), 
+            zohoMessage.content()
+        );
+        msg.setId(zohoMessage.messageId()); 
+        
+        return msg;
+    }
 
         static List<Message> parseMessages(String body) {
             List<ZohoMessage> data = JSON.decode(body, ZohoMessageReply.class).data();
@@ -150,7 +174,11 @@ public class Zoho implements Messages {
         request.addHeader("Authorization", "Zoho-oauthtoken " + token);
 
         try (Response response = service.execute(request)) {
+            System.out.println("[ZOHO-API] Sending message to: " + url);
             return response.isSuccessful();
+        }catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 
@@ -178,8 +206,10 @@ public class Zoho implements Messages {
         request.addHeader("Authorization", "Zoho-oauthtoken " + token);
 
         try (Response response = service.execute(request)) {
+            System.out.println("[ZOHO-API] Fetching message from: " + url);
             if (response.isSuccessful()) {
                 var body = response.getBody();
+                System.out.println("[ZOHO-API] getMessage response body: " + body);
                 var list = ZohoMessageMapper.parseMessages(body);
                 return list.isEmpty() ? null : list.get(0);
             } else {
@@ -193,8 +223,15 @@ public class Zoho implements Messages {
     public Result<List<String>> getAllInboxMessages(String name, String pwd) {
         try {
             List<Message> msgs = listMessages();
-            List<String> mids = msgs.stream().map(Message::getId).toList();
-            return Result.ok(mids);
+            
+            // Convert the raw list sequentially to matching formatted IDs
+            List<String> formattedMids = new ArrayList<>();
+            for (int i = 0; i < msgs.size(); i++) {
+                // Indexing usually starts from 1 (e.g., 0001)
+                formattedMids.add(formatToLocalId(i + 1));
+            }
+            
+            return Result.ok(formattedMids);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -246,7 +283,9 @@ public class Zoho implements Messages {
         request.addHeader("Authorization", "Zoho-oauthtoken " + token);
 
         try (Response response = service.execute(request)) {
+            System.out.println("[ZOHO-API] Fetching messages from: " + url);
             if (response.isSuccessful()) {
+                System.out.println("[ZOHO-API] listMessages response body: " + response.getBody());
                 return ZohoMessageMapper.parseMessages(response.getBody());
             } else {
                 throw new IllegalStateException("Zoho listMessages failed: " + response.getCode());
@@ -317,9 +356,20 @@ public class Zoho implements Messages {
     @Override
     public Result<List<String>> searchInbox(String name, String pwd, String query) {
         try {
-            List<Message> msgs = listMessages(query);
-            List<String> mids = msgs.stream().map(Message::getId).toList();
-            return Result.ok(mids);
+            List<Message> msgs;
+            if (query == null || query.strip().isEmpty()) {
+                msgs = listMessages(); 
+            } else {
+                msgs = listMessages(query); 
+            }
+            
+            // Convert the matched search list sequentially to matching formatted IDs
+            List<String> formattedMids = new ArrayList<>();
+            for (int i = 0; i < msgs.size(); i++) {
+                formattedMids.add(formatToLocalId(i + 1));
+            }
+            
+            return Result.ok(formattedMids);
         } catch (Exception e) {
             e.printStackTrace();
         }

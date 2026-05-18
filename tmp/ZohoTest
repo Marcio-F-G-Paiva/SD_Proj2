@@ -1,0 +1,135 @@
+package sd2526.trab.impl.external;
+
+import org.junit.jupiter.api.*;
+import sd2526.trab.api.Message;
+import sd2526.trab.api.java.Result;
+
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public class ZohoIntegrationTest {
+
+    private static Zoho zoho;
+    private static String sharedMessageId;
+    
+    // Test data definitions
+    private static final String TEST_PASSWORD = "arbitrary_pwd"; 
+    private static final String TEST_USER = "testUser";
+    private static final String UNIQUE_SUBJECT = "Integration Test: " + System.currentTimeMillis();
+    private static final String TEST_CONTENT = "This is a automated test body sent via ScribeJava.";
+
+    @BeforeAll
+    public static void setup() {
+        // Retrieve the Singleton instance
+        zoho = Zoho.getInstance();
+        assertNotNull(zoho, "Zoho instance should not be null");
+    }
+
+    @Test
+    @Order(1)
+    @DisplayName("1. Test Authentication & Token Retrieval")
+    public void testGetAccessToken() {
+        assertDoesNotThrow(() -> {
+            String token = zoho.getAccessToken();
+            assertNotNull(token, "Access token should be successfully retrieved");
+            assertFalse(token.isEmpty(), "Access token should not be empty");
+            System.out.println("[TEST] Successfully retrieved access token: " + token.substring(0, 10) + "...");
+        });
+    }
+
+    @Test
+    @Order(2)
+    @DisplayName("2. Test Posting/Sending a Message")
+    public void testPostMessage() {
+        // Construct a message payload matching your Message API constructor: 
+        // Message(String sender, Set<String> destination, String subject, String contents)
+        // Note: Using the local domain helper or a dummy destination address
+        String sender = "test@" + Zoho.THIS_DOMAIN;
+        Set<String> destinations = Set.of("recipient@" + Zoho.THIS_DOMAIN);
+        
+        Message msg = new Message(sender, destinations, UNIQUE_SUBJECT, TEST_CONTENT);
+
+        Result<String> result = zoho.postMessage(TEST_PASSWORD, msg);
+        
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isOK(), "postMessage should return a successful Result.ok()");
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("3. Test Listing All Inbox Messages & Extracting IDs")
+    public void testGetAllInboxMessages() {
+        Result<List<String>> result = zoho.getAllInboxMessages(TEST_USER, TEST_PASSWORD);
+        
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isOK(), "getAllInboxMessages should execute successfully");
+        
+        List<String> messageIds = result.value();
+        assertNotNull(messageIds, "Returned message ID list should not be null");
+        
+        System.out.println("[TEST] Inbox message count: " + messageIds.size());
+    }
+
+    @Test
+    @Order(4)
+    @DisplayName("4. Test Searching the Inbox with a specific query")
+    public void testSearchInbox() {
+        // We search using the unique subject generated in step 2
+        Result<List<String>> result = zoho.searchInbox(TEST_USER, TEST_PASSWORD, UNIQUE_SUBJECT);
+        
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isOK(), "searchInbox should execute successfully");
+        
+        List<String> matchedIds = result.value();
+        assertNotNull(matchedIds, "Search match list should not be null");
+        assertFalse(matchedIds.isEmpty(), "Search should find at least the message we posted in step 2");
+        
+        // Capture the remote Zoho Message ID for subsequent specific fetch and delete tests
+        sharedMessageId = matchedIds.get(0);
+        System.out.println("[TEST] Found matching message ID via search: " + sharedMessageId);
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("5. Test Fetching a Specific Message by ID")
+    public void testGetInboxMessage() {
+        Assumptions.assumeTrue(sharedMessageId != null, "Skipping test: No sharedMessageId captured from search step.");
+
+        Result<Message> result = zoho.getInboxMessage(TEST_USER, sharedMessageId, TEST_PASSWORD);
+        
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isOK(), "getInboxMessage should find the message successfully");
+        
+        Message fetchedMsg = result.value();
+        assertNotNull(fetchedMsg, "Fetched message body should not be null");
+        assertEquals(UNIQUE_SUBJECT, fetchedMsg.getSubject(), "Subjects should match perfectly");
+        assertEquals(TEST_CONTENT, fetchedMsg.getContents(), "Contents should match perfectly");
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("6. Test Removing Message From Inbox (Soft Delete/Move)")
+    public void testRemoveInboxMessage() {
+        Assumptions.assumeTrue(sharedMessageId != null, "Skipping test: No sharedMessageId captured.");
+
+        Result<Void> result = zoho.removeInboxMessage(TEST_USER, sharedMessageId, TEST_PASSWORD);
+        
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isOK(), "removeInboxMessage should complete with Result.ok()");
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("7. Test Hard Deleting/Expunging a Message")
+    public void testDeleteMessage() {
+        Assumptions.assumeTrue(sharedMessageId != null, "Skipping test: No sharedMessageId captured.");
+
+        Result<Void> result = zoho.deleteMessage(TEST_USER, sharedMessageId, TEST_PASSWORD);
+        
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isOK(), "deleteMessage should successfully purge the message from Zoho server");
+    }
+}
