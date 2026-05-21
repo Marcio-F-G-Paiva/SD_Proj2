@@ -143,16 +143,6 @@ public class Zoho implements Messages {
         }
     }
 
-    public Result<Void> remotePostMessage(Message msg) {
-        try {
-            sendMessage(msg);
-            return Result.ok();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
-        }
-    }
-
     public String sendMessage(Message message) throws Exception {
         var account = getAccount();
         var url = MAIL_API_BASE + ACCOUNTS + "/" + account.accountId() + MESSAGES;
