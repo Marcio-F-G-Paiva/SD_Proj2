@@ -35,9 +35,9 @@ public class Zoho implements Messages {
     private static final int MESSAGE_LIMIT = 200;
     private static final String METADATA_DELIMITER = "\n------\n";
 
-    final String CLIENT_ID;
-    final String CLIENT_SECRET;
-    final String REFRESH_TOKEN;
+    private static final String CLIENT_ID = "1000.KV9CB8Z3MCYI1DTCQDOTZXCL9HSH6C";
+    private static final String CLIENT_SECRET = "your_real_client_secret";
+    private static final String REFRESH_TOKEN = "1000.your_real_refresh_token";
 
     protected final static String THIS_DOMAIN = IP.domain();
     protected final static String AT_THIS_DOMAIN = '@' + THIS_DOMAIN;
@@ -48,14 +48,6 @@ public class Zoho implements Messages {
     static Zoho instance;
 
     private Zoho() {
-        this.CLIENT_ID = System.getenv("CLIENT_ID");
-        this.CLIENT_SECRET = System.getenv("CLIENT_SECRET");
-        this.REFRESH_TOKEN = System.getenv("REFRESH_TOKEN");
-
-        if (CLIENT_ID == null || CLIENT_ID.isBlank() || CLIENT_SECRET == null || CLIENT_SECRET.isBlank() || REFRESH_TOKEN == null || REFRESH_TOKEN.isBlank()) {
-            throw new IllegalStateException("CRITICAL ERROR: Zoho API environment variables (CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN) are not set.");
-        }
-
         this.service = ZohoServiceFactory.buildService(CLIENT_ID, CLIENT_SECRET);
         this.tokenManager = new ZohoTokenManager(service, REFRESH_TOKEN);
     }
