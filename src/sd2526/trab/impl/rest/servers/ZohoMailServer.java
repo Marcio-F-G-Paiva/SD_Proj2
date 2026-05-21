@@ -3,6 +3,7 @@ package sd2526.trab.impl.rest.servers;
 import java.util.logging.Logger;
 
 import org.glassfish.jersey.server.ResourceConfig;
+import sd2526.trab.api.java.Messages;
 import sd2526.trab.impl.external.Zoho;
 
 public class ZohoMailServer extends AbstractRestServer {
@@ -12,7 +13,7 @@ public class ZohoMailServer extends AbstractRestServer {
     private static Logger Log = Logger.getLogger(ZohoMailServer.class.getName());
 
     ZohoMailServer() {
-        super(Log, "ZohoMail", PORT);
+        super(Log, Messages.SERVICE_NAME, PORT);
     }
 
     @Override

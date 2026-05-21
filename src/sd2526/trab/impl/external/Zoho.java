@@ -114,6 +114,9 @@ public class Zoho implements Messages {
                     String[] kv = line.split("=", 2);
                     if (kv.length == 2) {
                         switch (kv[0]) {
+                            case "id":
+                                msg.setId(kv[1]);
+                                break;
                             case "sender":
                                 msg.setSender(kv[1]);
                                 break;
@@ -145,6 +148,16 @@ public class Zoho implements Messages {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error(Result.ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    public Result<Void> remotePostMessage(Message msg) {
+        try {
+            sendMessage(msg);
+            return Result.ok();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
         }
     }
 

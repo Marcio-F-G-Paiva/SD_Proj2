@@ -52,7 +52,7 @@ public class ZohoMailResource extends RestResource implements RestMessages, Rest
     @Override
     public void remotePostMessage(Message m) {
         System.out.println("[ZOHO-RESOURCE] Remote Posting message: " + m);
-        super.resultOrThrow(impl.postMessage("",m));
+        super.resultOrThrow(impl.remotePostMessage(m));
     }
 
     @Override
