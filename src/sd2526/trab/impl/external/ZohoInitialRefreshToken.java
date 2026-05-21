@@ -8,6 +8,8 @@ import java.net.http.HttpResponse;
 public class ZohoInitialRefreshToken {
 
     static final String TOKEN_ENDPOINT = "https://accounts.zoho.eu/oauth/v2/token";
+    static final String CLIENT_ID = System.getenv("CLIENT_ID");
+    static final String CLIENT_SECRET = System.getenv("CLIENT_SECRET");
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
@@ -18,8 +20,8 @@ public class ZohoInitialRefreshToken {
         String grantCode = args[0];
 
         String body = "code=" + grantCode
-                + "&client_id=" + Zoho.CLIENT_ID
-                + "&client_secret=" + Zoho.CLIENT_SECRET
+                + "&client_id=" + CLIENT_ID
+                + "&client_secret=" + CLIENT_SECRET
                 + "&grant_type=authorization_code";
 
         HttpClient client = HttpClient.newHttpClient();
